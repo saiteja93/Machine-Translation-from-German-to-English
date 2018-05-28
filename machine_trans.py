@@ -6,9 +6,9 @@
 #Trying to train on a Dataset which has the highest number of samples available in the page
 #Working on German - English for now. Will move on to Hindi to English soon.
 
-import re
-import string
-import numpy
+import re, string
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 def read_data(file_name):
     """
@@ -46,12 +46,13 @@ def data_preprocessing(pairs):
             element.append(entry)
         cleaned.append(element)
     print (len(cleaned))
-    for i in range(10):
-        print (cleaned[i][0], cleaned [i][1])
-    return cleaned
+    # for i in range(10):
+    #     print (cleaned[i][0], cleaned [i][1])
+    return np.array(cleaned)
 
-
-
+#the main aim is to come up with a Hindi-English translator, but let us start with this.
 file_name = "deu.txt"
 pairs = read_data(file_name)
 processed_pairs = data_preprocessing(pairs)
+
+#Test-train split.
