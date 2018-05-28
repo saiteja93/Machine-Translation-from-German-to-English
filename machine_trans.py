@@ -7,6 +7,7 @@
 #Working on German - English for now. Will move on to Hindi to English soon.
 
 import re
+import string
 import numpy
 
 def read_data(file_name):
@@ -25,7 +26,30 @@ def read_data(file_name):
     return pairs
 
 def data_preprocessing(pairs):
-    #removing punctuation, converting them to lowercase and removing the entries with numbers in them.
+    #removing punctuation, converting them to lowercase, removing the non-printable characters and removing the with numbers in them.
+    cleaned = []
+    for i in pairs:
+        element = []
+        for entry in i:
+            #we start, by removing punctuation and turning to lowercase
+            entry = re.sub(r'[^\w\s]',"",entry.lower())
+            #we remove the entries with non-printable characters
+            # print (entry)
+            # input("removed punctuation")
+            entry = "".join(filter(lambda x: x in string.printable, entry))
+            # print (entry)
+            # input("removed non printable characters")
+            #removing numerical entries
+            # temp = [word for word in entry if word.isalpha()]
+            # entry = " ".join(temp)
+            # print (entry)
+            element.append(entry)
+        cleaned.append(element)
+    print (len(cleaned))
+    for i in range(10):
+        print (cleaned[i][0], cleaned [i][1])
+    return cleaned
+
 
 
 file_name = "deu.txt"
