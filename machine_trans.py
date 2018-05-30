@@ -8,9 +8,17 @@
 
 import re, string
 import numpy as np
-from sklearn.model_selection import train_test_split
-from keras.preprocessing.text import Tokenizer
 import pandas as pd
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import LSTM
+from keras.layers import Dense
+from keras.layers import Embedding
+from keras.layers import RepeatVector
+from keras.layers import TimeDistributed
+from keras.callbacks import ModelCheckpoint
 
 def read_data(file_name):
     """
@@ -53,6 +61,7 @@ def data_preprocessing(pairs):
     return np.array(cleaned)
 
 def tokenizer_object_creation(lines):
+    #creates a tokenizer object for each language.
 	tokenizer = Tokenizer()
 	tokenizer.fit_on_texts(lines)
 	return tokenizer
@@ -61,11 +70,38 @@ def max_sentence_length(lines):
     #returns the length of the maximum sentence in Dataset.
     return max(len(line.split()) for line in lines)
 
+def encode_input_sequences(tokenizer, length, lines):
+	# integer encode sequences. We could be using Word2vec as well from Gensim. We make sure that all input sequences have the same length by padding the trailing positions with 0's.
+	X = tokenizer.texts_to_sequences(lines)
+	# pad sequences with 0 values
+	X = pad_sequences(X, maxlen=length, padding='post')
+	return X
+
+def encode_to_onehot(sequences, vocab_size):
+	ylist = list()
+	for sequence in sequences:
+		encoded = to_categorical(sequence, num_classes=vocab_size)
+		ylist.append(encoded)
+	y = np.array(ylist)
+    #The data has to be reshaped because LSTM requires 3D data.
+	y = y.reshape(sequences.shape[0], sequences.shape[1], vocab_size)
+    #print ("the shape of y is {}".format(y.shape))
+	return y
+
+def Model_specifications(source, target, source_max, target_max, dimension):
+	model = Sequential()
+	model.add(Embedding(source, dimension, input_length=source_max, mask_zero=True))
+	model.add(LSTM(dimension))
+	model.add(RepeatVector(target_max))
+	model.add(LSTM(dimension, return_sequences=True))
+	model.add(TimeDistributed(Dense(target, activation='softmax')))
+	return model
 
 #the main aim is to come up with a Hindi-English translator, but let us start with this.
 file_name = "deu.txt"
 pairs = read_data(file_name)
 processed_pairs = data_preprocessing(pairs)
+processed_pairs = processed_pairs[:10000]
 
 #Test-train split.
 split = 0.8
@@ -86,7 +122,6 @@ print('English Vocabulary Size: %d' % (english_vocabulary_size))
 print('English Max Length: %d' % (english_max_sentence_length))
 
 
-
 # prepare german tokenizer
 german_tokenizer = tokenizer_object_creation(processed_pairs[:, 1])
 german_vocabulary_size = len(german_tokenizer.word_index) + 1
@@ -94,3 +129,23 @@ german_vocabulary_size = len(german_tokenizer.word_index) + 1
 german_max_sentence_length = max_sentence_length(processed_pairs[:, 1])
 print('German Vocabulary Size: %d' % (german_vocabulary_size))
 print('German Max Length: %d' % (german_max_sentence_length))
+
+
+trainX = encode_input_sequences(german_tokenizer, german_max_sentence_length, train[:, 1])
+trainY = encode_input_sequences(english_tokenizer, english_max_sentence_length, train[:, 0])
+trainY = encode_to_onehot(trainY, english_vocabulary_size)
+# prepare validation data
+testX = encode_input_sequences(ger_tokenizer, ger_length, test[:, 1])
+testY = encode_input_sequences(eng_tokenizer, eng_length, test[:, 0])
+testY = encode_to_onehot(testY, eng_vocab_size)
+
+
+model = Model_specifications(german_vocabulary_size, english_vocabulary_size, german_max_sentence_length, english_max_sentence_length, 512)
+#categorical_crossentropy, since we framed our problem as a Multiclass classification problem.
+model.compile(optimizer='adam', loss='categorical_crossentropy')
+# prints the summary of the model, which basically prints the configuration of the model.
+print(model.summary())
+# fit model
+filename = 'model.h5'
+checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
+model.fit(trainX, trainY, epochs=30, batch_size=64, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
