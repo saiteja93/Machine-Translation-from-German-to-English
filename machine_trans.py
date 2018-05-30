@@ -101,7 +101,7 @@ def Model_specifications(source, target, source_max, target_max, dimension):
 file_name = "deu.txt"
 pairs = read_data(file_name)
 processed_pairs = data_preprocessing(pairs)
-processed_pairs = processed_pairs[:10000]
+processed_pairs = processed_pairs[:100]
 
 #Test-train split.
 split = 0.8
@@ -115,7 +115,7 @@ train, test = processed_pairs[:train_length], processed_pairs[train_length:]
 english_tokenizer = tokenizer_object_creation(processed_pairs[:, 0])
 english_vocabulary_size = len(english_tokenizer.word_index) + 1
 #english_tokenizer.word_index is a dictionary that stores the counts of each words occuring.
-print (english_tokenizer.word_index["was"])
+#print (english_tokenizer.word_index["was"])
 
 english_max_sentence_length = max_sentence_length(processed_pairs[:, 0])
 print('English Vocabulary Size: %d' % (english_vocabulary_size))
@@ -135,9 +135,9 @@ trainX = encode_input_sequences(german_tokenizer, german_max_sentence_length, tr
 trainY = encode_input_sequences(english_tokenizer, english_max_sentence_length, train[:, 0])
 trainY = encode_to_onehot(trainY, english_vocabulary_size)
 # prepare validation data
-testX = encode_input_sequences(ger_tokenizer, ger_length, test[:, 1])
-testY = encode_input_sequences(eng_tokenizer, eng_length, test[:, 0])
-testY = encode_to_onehot(testY, eng_vocab_size)
+testX = encode_input_sequences(german_tokenizer, german_max_sentence_length, test[:, 1])
+testY = encode_input_sequences(english_tokenizer, english_max_sentence_length, test[:, 0])
+testY = encode_to_onehot(testY, english_vocabulary_size)
 
 
 model = Model_specifications(german_vocabulary_size, english_vocabulary_size, german_max_sentence_length, english_max_sentence_length, 512)
@@ -148,4 +148,4 @@ print(model.summary())
 # fit model
 filename = 'model.h5'
 checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
-model.fit(trainX, trainY, epochs=30, batch_size=64, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
+model.fit(trainX, trainY, epochs=30, batch_size=8, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
