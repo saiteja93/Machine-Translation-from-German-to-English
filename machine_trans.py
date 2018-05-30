@@ -19,6 +19,8 @@ from keras.layers import Embedding
 from keras.layers import RepeatVector
 from keras.layers import TimeDistributed
 from keras.callbacks import ModelCheckpoint
+from keras.models import load_model
+from nltk.translate.bleu_score import corpus_bleu
 
 def read_data(file_name):
     """
@@ -101,7 +103,7 @@ def Model_specifications(source, target, source_max, target_max, dimension):
 file_name = "deu.txt"
 pairs = read_data(file_name)
 processed_pairs = data_preprocessing(pairs)
-processed_pairs = processed_pairs[:100]
+processed_pairs = processed_pairs[:10000]
 
 #Test-train split.
 split = 0.8
@@ -149,3 +151,41 @@ print(model.summary())
 filename = 'model.h5'
 checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
 model.fit(trainX, trainY, epochs=30, batch_size=8, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
+#### END OF TRAINING###
+
+#We try to evaluate the best model, which is stored in model.h5 file. We print translations and evaluate the BLEU scoresself.
+
+
+# generate target given source sequence
+def predict_sequence(model, tokenizer, source):
+	prediction = model.predict(source, verbose=0)[0]
+	integers = [argmax(vector) for vector in prediction]
+	target = list()
+	for i in integers:
+		word = word_for_id(i, tokenizer)
+		if word is None:
+			break
+		target.append(word)
+	return ' '.join(target)
+
+# evaluate the skill of the model
+def evaluate_model(model, tokenizer, sources, raw_dataset):
+	actual, predicted = list(), list()
+	for i, source in enumerate(sources):
+		# translate encoded source text
+		source = source.reshape((1, source.shape[0]))
+		translation = predict_sequence(model, eng_tokenizer, source)
+		raw_target, raw_src = raw_dataset[i]
+		if i < 10:
+			print('src=[%s], target=[%s], predicted=[%s]' % (raw_src, raw_target, translation))
+		actual.append(raw_target.split())
+		predicted.append(translation.split())
+	# calculate BLEU score
+	print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
+	print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
+	print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
+	print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
+
+model = load_model("model.h5")
+
+evaluate_model(model, english_tokenizer, testX, text)
