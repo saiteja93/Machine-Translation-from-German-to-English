@@ -37,30 +37,58 @@ def read_data(file_name):
     #     print (i)
     return pairs
 
-def data_preprocessing(pairs):
-    #removing punctuation, converting them to lowercase, removing the non-printable characters and removing the with numbers in them.
-    cleaned = []
-    for i in pairs:
-        element = []
-        for entry in i:
-            #we start, by removing punctuation and turning to lowercase
-            entry = re.sub(r'[^\w\s]',"",entry.lower())
-            # we remove the entries with non-printable characters
-            # print (entry)
-            # input("removed punctuation")
-            entry = "".join(filter(lambda x: x in string.printable, entry))
-            # print (entry)
-            # input("removed non printable characters")
-            # removing numerical entries
-            # temp = [word for word in entry if word.isalpha()]
-            # entry = " ".join(temp)
-            # print (entry)
-            element.append(entry)
-        cleaned.append(element)
-    #print (len(cleaned))
-    # for i in range(10):
-    #     print (cleaned[i][0], cleaned [i][1])
-    return np.array(cleaned)
+# def data_preprocessing(pairs):
+#     #removing punctuation, converting them to lowercase, removing the non-printable characters and removing the with numbers in them.
+#     cleaned = []
+#     for i in pairs:
+#         element = []
+#         for entry in i:
+#             #we start, by removing punctuation and turning to lowercase
+#             entry = re.sub(r'[^\w\s]',"",entry.lower())
+#             # we remove the entries with non-printable characters
+#             # print (entry)
+#             # input("removed punctuation")
+#             entry = "".join(filter(lambda x: x in string.printable, entry))
+#             # print (entry)
+#             # input("removed non printable characters")
+#             # removing numerical entries
+#             # temp = [word for word in entry if word.isalpha()]
+#             # entry = " ".join(temp)
+#             # print (entry)
+#             element.append(entry)
+#         cleaned.append(element)
+#     #print (len(cleaned))
+#     # for i in range(10):
+#     #     print (cleaned[i][0], cleaned [i][1])
+#     return np.array(cleaned)
+
+def data_preprocessing(lines):
+	cleaned = list()
+	# prepare regex for char filtering
+	re_print = re.compile('[^%s]' % re.escape(string.printable))
+	# prepare translation table for removing punctuation
+	table = str.maketrans('', '', string.punctuation)
+	for pair in lines:
+		clean_pair = list()
+		for line in pair:
+			# normalize unicode characters
+			line = normalize('NFD', line).encode('ascii', 'ignore')
+			line = line.decode('UTF-8')
+			# tokenize on white space
+			line = line.split()
+			# convert to lowercase
+			line = [word.lower() for word in line]
+			# remove punctuation from each token
+			line = [word.translate(table) for word in line]
+			# remove non-printable chars form each token
+			line = [re_print.sub('', w) for w in line]
+			# remove tokens with numbers in them
+			line = [word for word in line if word.isalpha()]
+			# store as string
+			clean_pair.append(' '.join(line))
+		cleaned.append(clean_pair)
+	return np.array(cleaned)
+
 
 def tokenizer_object_creation(lines):
     #creates a tokenizer object for each language.
@@ -155,6 +183,11 @@ model.fit(trainX, trainY, epochs=30, batch_size=8, validation_data=(testX, testY
 
 #We try to evaluate the best model, which is stored in model.h5 file. We print translations and evaluate the BLEU scoresself.
 
+def word_for_id(integer, tokenizer):
+	for word, index in tokenizer.word_index.items():
+		if index == integer:
+			return word
+	return None
 
 # generate target given source sequence
 def predict_sequence(model, tokenizer, source):
@@ -188,4 +221,4 @@ def evaluate_model(model, tokenizer, sources, raw_dataset):
 
 model = load_model("model.h5")
 
-evaluate_model(model, english_tokenizer, testX, text)
+evaluate_model(model, english_tokenizer, testX, test)
