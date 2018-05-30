@@ -29,8 +29,22 @@ Now, that I have my trainX, trainY, textX and testY ready. I got started with de
  - Initialised a Sequential model.
  - An embedding layer: arguements - number of distinct words in training set, dimension of word embedding, input length of each sample.
  https://stats.stackexchange.com/questions/270546/how-does-keras-embedding-layer-work
- - Encoder LSTM network. dimension - 512
- - 
+ - Encoder LSTM network. dimension - 512 or 256. 512 gave me a better performance after experimentation.
+ - RepeatVector - I realised that need the need for RepeatVector here, because the Encoder outputs a single vector, where as the decoder expects a sequential input. RepeatVector achieves that same vector is used for input for each timestep of Decoder.
+ - Decoder LSTM
+ - TimeDistributed - The use of this is explained best in the below links.
+https://stats.stackexchange.com/questions/264546/difference-between-samples-time-steps-and-features-in-neural-network
+https://machinelearningmastery.com/timedistributed-layer-for-long-short-term-memory-networks-in-python/
+
+
+Evaluating the Model:
+I decided to evaluate the model using the Bleu score which can be imported from the nltk. The Basic theory behind it can be found here.
+https://machinelearningmastery.com/calculate-bleu-score-for-text-python/
+https://stackoverflow.com/questions/40542523/nltk-corpus-level-bleu-vs-sentence-level-bleu-score
+
+My model achieved a BLEU for weights (0.25,0.25,0.25,0.25) as 0.52
+
+![Alt text](/relative/path/to/img.jpg?raw=true "Screenshot of execution")
 
 
 
@@ -40,9 +54,11 @@ Now, that I have my trainX, trainY, textX and testY ready. I got started with de
 
 
 Links:
-https://machinelearningmastery.com/develop-neural-machine-translation-system-keras/
-https://machinelearningmastery.com/configure-encoder-decoder-model-neural-machine-translation/
- https://medium.com/syncedreview/english-japanese-neural-machine-translation-with-encoder-decoder-reconstructor-1a023eaab2a5
-https://www.manythings.org/anki/
+1. Goldberg, Yoav. "A primer on neural network models for natural language processing." Journal of Artificial Intelligence Research 57 (2016): 345-420.
+2. Sutskever, Ilya, Oriol Vinyals, and Quoc V. Le. "Sequence to sequence learning with neural networks." Advances in neural information processing systems. 2014.
+3. https://machinelearningmastery.com/develop-neural-machine-translation-system-keras/
+4. https://machinelearningmastery.com/configure-encoder-decoder-model-neural-machine-translation/
+5. https://medium.com/syncedreview/english-japanese-neural-machine-translation-with-encoder-decoder-reconstructor-1a023eaab2a5
+5. https://www.manythings.org/anki/
 With Attention:
-https://machinelearningmastery.com/encoder-decoder-attention-sequence-to-sequence-prediction-keras/
+6. https://machinelearningmastery.com/encoder-decoder-attention-sequence-to-sequence-prediction-keras/

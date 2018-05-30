@@ -37,58 +37,35 @@ def read_data(file_name):
     #     print (i)
     return pairs
 
-# def data_preprocessing(pairs):
-#     #removing punctuation, converting them to lowercase, removing the non-printable characters and removing the with numbers in them.
-#     cleaned = []
-#     for i in pairs:
-#         element = []
-#         for entry in i:
-#             #we start, by removing punctuation and turning to lowercase
-#             entry = re.sub(r'[^\w\s]',"",entry.lower())
-#             # we remove the entries with non-printable characters
-#             # print (entry)
-#             # input("removed punctuation")
-#             entry = "".join(filter(lambda x: x in string.printable, entry))
-#             # print (entry)
-#             # input("removed non printable characters")
-#             # removing numerical entries
-#             # temp = [word for word in entry if word.isalpha()]
-#             # entry = " ".join(temp)
-#             # print (entry)
-#             element.append(entry)
-#         cleaned.append(element)
-#     #print (len(cleaned))
-#     # for i in range(10):
-#     #     print (cleaned[i][0], cleaned [i][1])
-#     return np.array(cleaned)
+def data_preprocessing(pairs):
+    #removing punctuation, converting them to lowercase, removing the non-printable characters and removing the with numbers in them.
+    cleaned = []
+    for i in pairs:
+        element = []
+        for entry in i:
+            #we start, by removing punctuation and turning to lowercase
+            entry = re.sub(r'[^\w\s]',"",entry.lower())
+            # we remove the entries with non-printable characters
+            # print (entry)
+            # input("removed punctuation")
+            entry = "".join(filter(lambda x: x in string.printable, entry))
+            # print (entry)
+            # input("removed non printable characters")
+            # removing numerical entries
+            # temp = [word for word in entry if word.isalpha()]
+            # entry = " ".join(temp)
+            # print (entry)
+            element.append(entry)
+        cleaned.append(element)
+    #print (len(cleaned))
+    # for i in range(10):
+    #     print (cleaned[i][0], cleaned [i][1])
+    return np.array(cleaned)
 
-def data_preprocessing(lines):
-	cleaned = list()
-	# prepare regex for char filtering
-	re_print = re.compile('[^%s]' % re.escape(string.printable))
-	# prepare translation table for removing punctuation
-	table = str.maketrans('', '', string.punctuation)
-	for pair in lines:
-		clean_pair = list()
-		for line in pair:
-			# normalize unicode characters
-			line = normalize('NFD', line).encode('ascii', 'ignore')
-			line = line.decode('UTF-8')
-			# tokenize on white space
-			line = line.split()
-			# convert to lowercase
-			line = [word.lower() for word in line]
-			# remove punctuation from each token
-			line = [word.translate(table) for word in line]
-			# remove non-printable chars form each token
-			line = [re_print.sub('', w) for w in line]
-			# remove tokens with numbers in them
-			line = [word for word in line if word.isalpha()]
-			# store as string
-			clean_pair.append(' '.join(line))
-		cleaned.append(clean_pair)
-	return np.array(cleaned)
-
+def modify (train):
+    for i in train[:,0]:
+        i = " ".join(i.split()[::-1])
+    return train
 
 def tokenizer_object_creation(lines):
     #creates a tokenizer object for each language.
@@ -118,13 +95,13 @@ def encode_to_onehot(sequences, vocab_size):
     #print ("the shape of y is {}".format(y.shape))
 	return y
 
-def Model_specifications(source, target, source_max, target_max, dimension):
+def Model_specifications(source_vocab_size, target_vocab_size, source_max_length, target_max_length, dimension):
 	model = Sequential()
-	model.add(Embedding(source, dimension, input_length=source_max, mask_zero=True))
-	model.add(LSTM(dimension))
-	model.add(RepeatVector(target_max))
+	model.add(Embedding(source_vocab_size, dimension, input_length=source_max_length, mask_zero=True))
+	model.add(Bidirectional(LSTM(dimension)))
+	model.add(RepeatVector(target_max_length))
 	model.add(LSTM(dimension, return_sequences=True))
-	model.add(TimeDistributed(Dense(target, activation='softmax')))
+	model.add(TimeDistributed(Dense(target_vocab_size, activation='softmax')))
 	return model
 
 #the main aim is to come up with a Hindi-English translator, but let us start with this.
@@ -134,11 +111,12 @@ processed_pairs = data_preprocessing(pairs)
 processed_pairs = processed_pairs[:10000]
 
 #Test-train split.
-split = 0.8
-train_length = int(len(processed_pairs) * 0.8)
+split = 0.875
+train_length = int(len(processed_pairs) * split)
 
 train, test = processed_pairs[:train_length], processed_pairs[train_length:]
 
+train = modify(train)
 
 
 # prepare english tokenizer
@@ -177,8 +155,9 @@ model.compile(optimizer='adam', loss='categorical_crossentropy')
 print(model.summary())
 # fit model
 filename = 'model.h5'
+
 checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
-model.fit(trainX, trainY, epochs=30, batch_size=8, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
+model.fit(trainX, trainY, epochs=30, batch_size=128, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
 #### END OF TRAINING###
 
 #We try to evaluate the best model, which is stored in model.h5 file. We print translations and evaluate the BLEU scoresself.
@@ -192,7 +171,7 @@ def word_for_id(integer, tokenizer):
 # generate target given source sequence
 def predict_sequence(model, tokenizer, source):
 	prediction = model.predict(source, verbose=0)[0]
-	integers = [argmax(vector) for vector in prediction]
+	integers = [np.argmax(vector) for vector in prediction]
 	target = list()
 	for i in integers:
 		word = word_for_id(i, tokenizer)
@@ -207,16 +186,13 @@ def evaluate_model(model, tokenizer, sources, raw_dataset):
 	for i, source in enumerate(sources):
 		# translate encoded source text
 		source = source.reshape((1, source.shape[0]))
-		translation = predict_sequence(model, eng_tokenizer, source)
+		translation = predict_sequence(model, english_tokenizer, source)
 		raw_target, raw_src = raw_dataset[i]
 		if i < 10:
 			print('src=[%s], target=[%s], predicted=[%s]' % (raw_src, raw_target, translation))
 		actual.append(raw_target.split())
 		predicted.append(translation.split())
 	# calculate BLEU score
-	print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
-	print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
-	print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
 	print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
 
 model = load_model("model.h5")
