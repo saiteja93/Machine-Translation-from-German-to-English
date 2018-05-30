@@ -44,7 +44,7 @@ https://stackoverflow.com/questions/40542523/nltk-corpus-level-bleu-vs-sentence-
 
 My model achieved a BLEU for weights (0.25,0.25,0.25,0.25) as 0.52
 
-![Alt text](/relative/path/to/img.jpg?raw=true "Screenshot of execution")
+![Alt text](https://github.com/saiteja93/Machine-Translation-German---English-tentatively-/blob/master/img.PNG?raw=true "Screenshot of execution")
 
 
 
