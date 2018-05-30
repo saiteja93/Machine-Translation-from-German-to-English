@@ -60,5 +60,4 @@ Links:
 4. https://machinelearningmastery.com/configure-encoder-decoder-model-neural-machine-translation/
 5. https://medium.com/syncedreview/english-japanese-neural-machine-translation-with-encoder-decoder-reconstructor-1a023eaab2a5
 5. https://www.manythings.org/anki/
-With Attention:
-6. https://machinelearningmastery.com/encoder-decoder-attention-sequence-to-sequence-prediction-keras/
+6. With Attention: https://machinelearningmastery.com/encoder-decoder-attention-sequence-to-sequence-prediction-keras/
