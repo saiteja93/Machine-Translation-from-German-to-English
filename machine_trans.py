@@ -1,6 +1,6 @@
 #Author: Saiteja Sirikonda
 #Project : A simple Machine Translation system using Keras
-#Start date: May 22nd, 2018
+#Start date: May 16th, 2018
 
 #Dataset taken from page www.manythings.org/anki/
 #Trying to train on a Dataset which has the highest number of samples available in the page
@@ -98,7 +98,7 @@ def encode_to_onehot(sequences, vocab_size):
 def Model_specifications(source_vocab_size, target_vocab_size, source_max_length, target_max_length, dimension):
 	model = Sequential()
 	model.add(Embedding(source_vocab_size, dimension, input_length=source_max_length, mask_zero=True))
-	model.add(Bidirectional(LSTM(dimension)))
+	model.add(LSTM(dimension))
 	model.add(RepeatVector(target_max_length))
 	model.add(LSTM(dimension, return_sequences=True))
 	model.add(TimeDistributed(Dense(target_vocab_size, activation='softmax')))

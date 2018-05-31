@@ -36,6 +36,8 @@ Now, that I have my trainX, trainY, textX and testY ready. I got started with de
 https://stats.stackexchange.com/questions/264546/difference-between-samples-time-steps-and-features-in-neural-network
 https://machinelearningmastery.com/timedistributed-layer-for-long-short-term-memory-networks-in-python/
 
+It has been found that reversing the train sequencing and feeding it to the model, has improved the performance of the engine by [2] and I will be doing the same thing in my model.
+
 
 Evaluating the Model:
 I decided to evaluate the model using the Bleu score which can be imported from the nltk. The Basic theory behind it can be found here.
