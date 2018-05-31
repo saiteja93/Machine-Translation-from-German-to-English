@@ -50,11 +50,6 @@ My model achieved a BLEU for weights (0.25,0.25,0.25,0.25) as 0.52
 
 
 
-
-
-
-
-
 Links:
 1. Goldberg, Yoav. "A primer on neural network models for natural language processing." Journal of Artificial Intelligence Research 57 (2016): 345-420.
 2. Sutskever, Ilya, Oriol Vinyals, and Quoc V. Le. "Sequence to sequence learning with neural networks." Advances in neural information processing systems. 2014.
